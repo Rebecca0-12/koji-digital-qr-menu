@@ -1,0 +1,79 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KŌJI — Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <p class="brand">KŌJI</p>
+  <p class="tagline" id="tagline">Modern Nikkei kitchen &amp; robata grill</p>
+  <div class="lang-switch" id="langSwitch"></div>
+</header>
+
+<div class="filter-bar">
+  <div class="search-row">
+    <div class="search-input-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="searchInput" type="text" placeholder="Search dishes" autocomplete="off">
+    </div>
+    <button class="allergen-toggle" id="allergenToggle">
+      Filter allergens
+      <span class="badge" id="allergenBadge" style="display:none;">0</span>
+    </button>
+  </div>
+  <div class="allergen-panel" id="allergenPanel">
+    <div class="allergen-panel-header">
+      <span>Exclude allergens</span>
+      <button id="clearAllergens">Clear</button>
+    </div>
+    <div class="allergen-chips" id="allergenChips"></div>
+  </div>
+</div>
+
+<nav class="category-nav" id="categoryNav"></nav>
+
+<main class="menu" id="menuMain"></main>
+
+<p class="source-note" id="sourceNote">Showing sample menu.</p>
+
+<!-- Dish detail modal -->
+<div class="modal-backdrop" id="dishModalBackdrop">
+  <div class="dish-modal" id="dishModal" style="position:relative;"></div>
+</div>
+
+<!-- Cart button -->
+<button class="cart-btn" id="cartBtn">
+  <span><span class="count" id="cartCount">0</span>Your order</span>
+  <span id="cartTotal">$0.00</span>
+</button>
+
+<!-- Cart drawer -->
+<div class="cart-drawer-backdrop" id="cartBackdrop"></div>
+<div class="cart-drawer" id="cartDrawer" style="display:none;">
+  <div class="cart-header">
+    <h2>Your order</h2>
+    <button id="closeCart">✕</button>
+  </div>
+  <div class="cart-items" id="cartItemsList"></div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span>Total</span>
+      <strong id="cartFooterTotal">$0.00</strong>
+    </div>
+    <a class="whatsapp-btn" id="whatsappBtn" href="#" target="_blank" rel="noopener">Send order via WhatsApp</a>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
