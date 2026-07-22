@@ -1,4 +1,3 @@
-
 /* ============ CONFIG ============ */
 const restaurantConfig = {
   name: 'KŌJI',
@@ -47,8 +46,18 @@ const restaurantConfig = {
   },
 };
 
-/* ============ SAMPLE DATA (baked in — replace via DISHES array below to use your own CSV) ============ */
-const RAW_DISHES = [
+/* ============ GOOGLE SHEETS CSV CONFIG ============ */
+// Published Google Sheet (File > Share > Publish to web > CSV) used as the live menu data source.
+// Expected columns (header row), one row per dish:
+//   id, category, displayOrder, name_en, name_fr, name_es, desc_en, desc_fr, desc_es,
+//   price, allergens, dietaryTags, available, featured, imageUrl
+// - allergens / dietaryTags: semicolon-separated values in a single cell, e.g. "fish;soy;sesame"
+// - available / featured: TRUE or FALSE (any case) in the sheet
+// - price: plain number, e.g. 19 or 19.5
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9HsaCNqrZ5QPrEXwPOkAN_APwTZzSvoMQmI-GOs5KwP5qGFR8znvjA1uL9SZ_XMfjUhbsAEpxdyhG/pub?output=csv';
+
+/* ============ SAMPLE DATA (fallback — used if the CSV fetch fails or is unreachable) ============ */
+const FALLBACK_DISHES = [
 {id:'starter-01',category:'starters',displayOrder:1,name:{en:'Hamachi Tiradito',fr:'Tiradito de Hamachi',es:'Tiradito de Hamachi'},description:{en:'Thin-sliced yellowtail, leche de tigre, aji amarillo, crisp shallot, cilantro oil',fr:'Emincé de sériole, leche de tigre, aji amarillo, échalote croustillante, huile de coriandre',es:'Lonjas finas de hamachi, leche de tigre, aji amarillo, chalota crujiente, aceite de cilantro'},price:19,allergens:['fish'],dietaryTags:['pescatarian'],available:true,featured:true,imageUrl:'https://images.unsplash.com/photo-1607301405390-d831c242f59b?w=800'},
 {id:'starter-02',category:'starters',displayOrder:2,name:{en:'Charred Shishito & Miso Butter',fr:'Shishito Grillés au Beurre Miso',es:'Shishito Asados con Mantequilla de Miso'},description:{en:'Blistered shishito peppers, brown butter miso glaze, bonito flake, lime zest',fr:'Poivrons shishito cloqués, glaçage beurre-miso, copeaux de bonite, zeste de citron vert',es:'Pimientos shishito asados, glaseado de mantequilla y miso, copos de bonito, ralladura de lima'},price:14,allergens:['fish','soy','milk'],dietaryTags:['vegetarian-option'],available:true,featured:false,imageUrl:'https://images.unsplash.com/photo-1626200419199-391ae4be7a41?w=800'},
 {id:'starter-03',category:'starters',displayOrder:3,name:{en:'Tuna Tataki Robata',fr:'Tataki de Thon Robata',es:'Tataki de Atún Robata'},description:{en:'Charcoal-seared bluefin, ponzu, grated daikon, micro shiso, toasted sesame',fr:'Thon rouge saisi au charbon, ponzu, daikon râpé, micro-shiso, sésame grillé',es:'Atún rojo sellado al carbón, ponzu, daikon rallado, micro shiso, sésamo tostado'},price:22,allergens:['fish','soy','sesame'],dietaryTags:['gluten-free'],available:true,featured:false,imageUrl:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800'},
@@ -74,6 +83,106 @@ const RAW_DISHES = [
 {id:'nonalcoholic-03',category:'nonalcoholic',displayOrder:3,name:{en:'Shiso Limeade',fr:'Limonade au Shiso',es:'Limonada de Shiso'},description:{en:'Fresh shiso, lime, light agave',fr:'Shiso frais, citron vert, agave léger',es:'Shiso fresco, lima, agave suave'},price:6,allergens:[],dietaryTags:['vegan'],available:true,featured:false,imageUrl:'https://images.unsplash.com/photo-1497534446932-c925b458314e?w=800'},
 {id:'nonalcoholic-04',category:'nonalcoholic',displayOrder:4,name:{en:'Cold Brew Genmaicha',fr:'Genmaicha Infusion Froide',es:'Genmaicha en Frío'},description:{en:'Cold-steeped genmaicha, toasted rice notes',fr:'Genmaicha infusé à froid, notes de riz grillé',es:'Genmaicha infusionado en frío, notas de arroz tostado'},price:6,allergens:[],dietaryTags:['vegan'],available:true,featured:false,imageUrl:'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=800'}
 ];
+
+// RAW_DISHES is the live data set the rest of the app reads from.
+// It starts as the fallback data and is replaced in-place once the CSV loads successfully.
+let RAW_DISHES = FALLBACK_DISHES;
+
+/* ============ CSV LOADING & PARSING ============ */
+
+// Minimal CSV parser that supports quoted fields, escaped quotes (""), and commas/newlines inside quotes.
+// Avoids relying on a naive split(',') which would break on any quoted field containing a comma.
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && next === '"') { field += '"'; i++; }
+      else if (char === '"') { inQuotes = false; }
+      else { field += char; }
+    } else {
+      if (char === '"') { inQuotes = true; }
+      else if (char === ',') { row.push(field); field = ''; }
+      else if (char === '\n' || char === '\r') {
+        if (char === '\r' && next === '\n') i++; // handle \r\n
+        row.push(field); field = '';
+        if (row.length > 1 || row[0] !== '') rows.push(row); // skip fully blank lines
+        row = [];
+      } else { field += char; }
+    }
+  }
+  // push the final field/row if the file doesn't end with a newline
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (r[idx] !== undefined ? r[idx] : '').trim(); });
+    return obj;
+  });
+}
+
+// Converts a single flat CSV row object into the nested dish shape the app expects
+// (matching the same structure as FALLBACK_DISHES above).
+function normalizeCsvRow(row) {
+  const toBool = (val) => String(val).trim().toUpperCase() === 'TRUE';
+  const toList = (val) => String(val || '')
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  return {
+    id: row.id,
+    category: row.category,
+    displayOrder: Number(row.displayOrder) || 0,
+    name: {
+      en: row.name_en || '',
+      fr: row.name_fr || row.name_en || '',
+      es: row.name_es || row.name_en || '',
+    },
+    description: {
+      en: row.desc_en || '',
+      fr: row.desc_fr || row.desc_en || '',
+      es: row.desc_es || row.desc_en || '',
+    },
+    price: Number(row.price) || 0,
+    allergens: toList(row.allergens),
+    dietaryTags: toList(row.dietaryTags),
+    available: toBool(row.available),
+    featured: toBool(row.featured),
+    imageUrl: row.imageUrl || '',
+  };
+}
+
+// Fetches the published Google Sheet CSV, parses it, and normalizes it into dish objects.
+// On any failure (network error, empty/malformed response, etc.) it throws, and the caller
+// falls back to the hardcoded FALLBACK_DISHES so the site never breaks.
+async function loadDishesFromCsv() {
+  const response = await fetch(CSV_URL, { cache: 'no-store' });
+  if (!response.ok) throw new Error('CSV fetch failed with status ' + response.status);
+
+  const text = await response.text();
+  const rows = parseCSV(text);
+  if (!rows.length) throw new Error('CSV returned no rows');
+
+  const dishes = rows
+    .filter(r => r.id) // ignore any blank/trailing rows without an id
+    .map(normalizeCsvRow);
+
+  if (!dishes.length) throw new Error('CSV parsed but produced no valid dishes');
+  return dishes;
+}
 
 /* ============ STATE ============ */
 let state = {
@@ -422,4 +531,18 @@ function renderAll() {
   document.getElementById('allergenToggle').firstChild.textContent = restaurantConfig.ui.filterAllergens[state.language] + ' ';
 }
 
-renderAll();
+// Attempts to load fresh menu data from the published Google Sheet before the first render.
+// If the fetch/parse fails for any reason (offline, sheet unpublished, bad format, etc.),
+// we log the issue and silently continue with FALLBACK_DISHES so the page still works normally.
+async function init() {
+  try {
+    const csvDishes = await loadDishesFromCsv();
+    RAW_DISHES = csvDishes;
+  } catch (err) {
+    console.warn('Could not load menu from Google Sheets CSV, using fallback data instead:', err);
+    RAW_DISHES = FALLBACK_DISHES;
+  }
+  renderAll();
+}
+
+init();
