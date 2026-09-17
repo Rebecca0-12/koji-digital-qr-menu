@@ -1,4 +1,4 @@
-============ CONFIG ============ */
+/* ============ CONFIG ============ */
 const restaurantConfig = {
   name: 'MARA',
   tagline: {
