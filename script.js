@@ -47,6 +47,25 @@ const restaurantConfig = {
   },
 };
 
+/* ============ CURRENCY FORMATTING (Nigerian Naira) ============ */
+// Formats a numeric price as Nigerian Naira with thousand separators, e.g. 4000 -> "₦4,000".
+// Uses Intl.NumberFormat so grouping/rounding follows standard Naira display conventions.
+// Prices in this app are whole numbers, so no decimal places are shown (e.g. ₦4,000, not ₦4,000.00).
+const nairaFormatter = new Intl.NumberFormat('en-NG', {
+  style: 'currency',
+  currency: 'NGN',
+  currencyDisplay: 'narrowSymbol',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+function formatPrice(amount) {
+  if (amount === null || amount === undefined || isNaN(amount)) return '';
+  // Intl's NGN narrowSymbol reliably renders as "₦"; fall back to manual formatting just in case.
+  const formatted = nairaFormatter.format(amount);
+  return formatted.includes('₦') ? formatted : `₦${Math.round(amount).toLocaleString('en-NG')}`;
+}
+
 /* ============ GOOGLE SHEETS CSV CONFIG ============ */
 // Published Google Sheet (File > Share > Publish to web > CSV) used as the live menu data source.
 // Expected columns (header row), one row per dish:
@@ -353,7 +372,7 @@ function renderMenu() {
 function renderDishCard(d) {
   const name = d.name[state.language] || d.name.en;
   const desc = d.description[state.language] || d.description.en;
-  const priceText = d.price !== null ? `$${d.price.toFixed(2)}` : '';
+  const priceText = d.price !== null ? formatPrice(d.price) : '';
   const tags = [];
   if (d.featured) tags.push(`<span class="tag featured">${restaurantConfig.ui.featured[state.language]}</span>`);
   if (!d.available) tags.push(`<span class="tag unavailable">${restaurantConfig.ui.unavailable[state.language]}</span>`);
@@ -379,7 +398,7 @@ function openDishModal() {
   if (!d) return;
   const name = d.name[state.language] || d.name.en;
   const desc = d.description[state.language] || d.description.en;
-  const priceText = d.price !== null ? `$${d.price.toFixed(2)}` : '';
+  const priceText = d.price !== null ? formatPrice(d.price) : '';
 
   const modal = document.getElementById('dishModal');
   modal.innerHTML = `
@@ -466,7 +485,7 @@ function renderCartUI() {
   const btn = document.getElementById('cartBtn');
   btn.classList.toggle('visible', itemCount > 0);
   document.getElementById('cartCount').textContent = itemCount;
-  document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('cartTotal').textContent = formatPrice(total);
 }
 
 function renderCartDrawer() {
@@ -479,7 +498,7 @@ function renderCartDrawer() {
       <div class="cart-item" data-id="${l.dish.id}">
         <div class="cart-item-info">
           <p class="cart-item-name">${l.name}</p>
-          <p class="cart-item-price">$${l.dish.price.toFixed(2)} each</p>
+          <p class="cart-item-price">${formatPrice(l.dish.price)} each</p>
           <div class="qty-control">
             <button class="qty-minus" data-id="${l.dish.id}">−</button>
             <span>${l.quantity}</span>
@@ -503,18 +522,18 @@ function renderCartDrawer() {
     }));
   }
 
-  document.getElementById('cartFooterTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('cartFooterTotal').textContent = formatPrice(total);
   document.getElementById('whatsappBtn').href = buildWhatsAppOrderUrl(lines, total);
 }
 
 function buildWhatsAppOrderUrl(lines, total) {
   const header = `${restaurantConfig.name} — New Order\n${restaurantConfig.locationName}\n`;
   const body = lines.map(line => {
-    const priceText = line.dish.price !== null ? `$${line.lineTotal.toFixed(2)}` : '';
+    const priceText = line.dish.price !== null ? formatPrice(line.lineTotal) : '';
     const noteText = line.notes?.trim() ? `\n   Note: ${line.notes.trim()}` : '';
     return `${line.quantity}x ${line.name} — ${priceText}${noteText}`;
   }).join('\n');
-  const footer = `\n\nTotal: $${total.toFixed(2)}`;
+  const footer = `\n\nTotal: ${formatPrice(total)}`;
   const message = `${header}\n${body}${footer}`;
   return `https://wa.me/${restaurantConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
