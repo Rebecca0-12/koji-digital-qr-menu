@@ -1,61 +1,65 @@
-# KŌJI Digital QR Menu
+MARA Digital QR Menu
 
-**🔗 [View Live Demo](https://kojidigitalmenu.netlify.app/)** 
+🔗 View Live Demo
 
-An interactive digital restaurant menu built for QR-code table ordering. Designed to provide restaurants with a modern menu experience featuring multilingual support, allergen filtering, cart functionality, WhatsApp checkout, and spreadsheet-based menu management.
+An interactive digital Japanese restaurant menu designed for QR-code table access. Mara provides a modern menu experience with multilingual support, allergen filtering, dish search, cart functionality, WhatsApp checkout, and spreadsheet-based menu management.
 
-## Features
+Features
 
-- Responsive mobile-first design optimized for QR-code table access
-- Multi-language menu support
-- Dish search functionality
-- Allergen filtering system
-- Interactive dish cards with detailed views
-- Shopping cart functionality
-- WhatsApp checkout integration
-- Spreadsheet-powered menu updates using CSV data
+* Responsive, mobile-first design optimized for QR-code table access
+* Multi-language menu support
+* Dish search functionality
+* Allergen filtering system
+* Interactive dish cards with detailed views
+* Shopping cart functionality
+* WhatsApp checkout integration
+* Spreadsheet-powered menu updates using CSV data
 
-## Built With
+Built With
 
-- HTML5
-- CSS3
-- JavaScript (Vanilla JS)
-- CSV data integration
-- Netlify deployment
+* HTML5
+* CSS3
+* JavaScript (Vanilla JS)
+* CSV data integration
+* Netlify deployment
 
-## Project Overview
+Project Overview
 
-Many restaurants need digital menus that are modern, interactive, and easy to update.
+Mara was designed as a digital menu concept for a Japanese restaurant, with a focus on making the menu easier for customers to browse and easier for restaurant staff to update.
 
-KŌJI Digital QR Menu provides a lightweight solution where restaurant menu information can be managed through spreadsheet data and displayed dynamically on the website. This allows menu updates such as dish names, prices, and availability changes without requiring manual edits to the website code.
+Instead of hard-coding every menu item into the website, Mara uses spreadsheet-based CSV data to populate the menu dynamically. This allows information such as dish names, prices, and availability to be updated without manually editing the website code.
 
-## Project Structure
+The menu also includes features that make browsing more practical for customers, including search, dietary and allergen filtering, multiple languages, detailed dish information, and a cart with WhatsApp checkout.
 
-```text
-koji-digital-qr-menu/
+How It Works
+
+1. Customers scan a QR code at a restaurant table.
+2. The digital menu opens in their browser.
+3. Customers can browse dishes, search the menu, filter allergens, switch languages, and view detailed dish information.
+4. Customers can add items to their cart and proceed through WhatsApp checkout.
+5. Restaurant menu data can be updated through spreadsheet CSV data without changing the core website code.
+
+Project Structure
+
+mara-digital-qr-menu/
 │
 ├── index.html
 ├── style.css
 ├── script.js
 └── README.md
-```
 
-## How It Works
+Future Improvements
 
-1. Customers scan a QR code at a restaurant table.
-2. The digital menu opens instantly in their browser.
-3. Customers can browse dishes, search the menu, filter allergens, switch languages, and add items to their order.
-4. Orders are sent through WhatsApp checkout.
-5. Restaurant menu data can be updated through spreadsheet CSV data.
+* Restaurant owner dashboard
+* Table number identification
+* Payment integration
+* Database support for larger restaurant systems
+* Improved menu management features
 
-## Future Improvements
+Notes
 
-- Restaurant owner dashboard
-- Table number identification
-- Payment integration
-- Database support for larger restaurant systems
-- Improved menu management features
+This project is a portfolio/demo concept. The menu content and restaurant branding are used to demonstrate how an interactive digital menu could work for a Japanese restaurant.
 
-## Author
+Author
 
 Built by Sasere Okikiola
